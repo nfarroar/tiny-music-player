@@ -104,27 +104,42 @@ public class HWListener extends BroadcastReceiver {
    */
   @Override
   public void onReceive(Context context, Intent intent) {
-    var event = (KeyEvent) intent.getParcelableExtra(EXTRA_KEY_EVENT);
-    if (event.getAction() == KeyEvent.ACTION_DOWN) {
-      intent = new Intent(context, Service.class);
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_HISTORY);
-      switch (event.getKeyCode()) {
-        case KeyEvent.KEYCODE_MEDIA_PLAY:
-          intent.putExtra(Launcher.TYPE, Launcher.PLAY);
-          break;
-        case KeyEvent.KEYCODE_MEDIA_PAUSE:
-          intent.putExtra(Launcher.TYPE, Launcher.PAUSE);
-          break;
-        case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-          intent.putExtra(Launcher.TYPE, Launcher.PLAY_PAUSE);
-          break;
-        case KeyEvent.KEYCODE_MEDIA_STOP:
-          intent.putExtra(Launcher.TYPE, Launcher.KILL);
-          break;
-        default:
-          return;
-      }
-      context.startService(intent);
+    // Validate intent and extras
+    if (intent == null || !Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+      return;
     }
+
+    // Validate KeyEvent extra exists and is valid
+    if (!intent.hasExtra(EXTRA_KEY_EVENT)) {
+      return;
+    }
+
+    KeyEvent event = (KeyEvent) intent.getParcelableExtra(EXTRA_KEY_EVENT);
+    if (event == null || event.getAction() != KeyEvent.ACTION_DOWN) {
+      return;
+    }
+
+    // Create a new intent to prevent intent injection
+    Intent serviceIntent = new Intent(context, Service.class);
+    serviceIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_HISTORY);
+    
+    // Only accept valid media key codes
+    switch (event.getKeyCode()) {
+      case KeyEvent.KEYCODE_MEDIA_PLAY:
+        serviceIntent.putExtra(Launcher.TYPE, Launcher.PLAY);
+        break;
+      case KeyEvent.KEYCODE_MEDIA_PAUSE:
+        serviceIntent.putExtra(Launcher.TYPE, Launcher.PAUSE);
+        break;
+      case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+        serviceIntent.putExtra(Launcher.TYPE, Launcher.PLAY_PAUSE);
+        break;
+      case KeyEvent.KEYCODE_MEDIA_STOP:
+        serviceIntent.putExtra(Launcher.TYPE, Launcher.KILL);
+        break;
+      default:
+        return;
+    }
+    context.startService(serviceIntent);
   }
 }
