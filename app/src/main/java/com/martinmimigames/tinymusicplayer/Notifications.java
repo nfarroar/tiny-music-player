@@ -108,7 +108,14 @@ class Notifications {
    */
   PendingIntent genIntent(int id, byte action) {
     /* flags for control logics on notification */
-    var pendingIntentFlag = PendingIntent.FLAG_IMMUTABLE;
+    int pendingIntentFlag = 0;
+    
+    // Android 6.0+ requires FLAG_IMMUTABLE or FLAG_MUTABLE
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      // Use FLAG_IMMUTABLE for security - content doesn't need to be modified
+      pendingIntentFlag = PendingIntent.FLAG_IMMUTABLE;
+    }
+    
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CUPCAKE)
       pendingIntentFlag |= PendingIntent.FLAG_UPDATE_CURRENT;
 

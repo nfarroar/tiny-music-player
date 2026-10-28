@@ -14,13 +14,27 @@ android {
   signingConfigs {
     def keystorePropertiesFiles = rootProject.file("keystore.properties")
     def keystoreProperties = new Properties()
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFiles))
-
-    basic {
-      storeFile file(keystoreProperties['storeFile'])
-      storePassword keystoreProperties['storePassword']
-      keyAlias keystoreProperties['keyAlias']
-      keyPassword keystoreProperties['keyPassword']
+    
+    // Only load keystore if the file exists
+    if (keystorePropertiesFiles.exists()) {
+      try {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFiles))
+        
+        basic {
+          // Validate all required properties exist before using them
+          if (keystoreProperties['storeFile'] && 
+              keystoreProperties['storePassword'] && 
+              keystoreProperties['keyAlias'] && 
+              keystoreProperties['keyPassword']) {
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+          }
+        }
+      } catch (Exception e) {
+        logger.warn("Failed to load keystore properties: ${e.message}")
+      }
     }
   }
 
@@ -30,10 +44,16 @@ android {
       shrinkResources true
       crunchPngs true
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-      signingConfig signingConfigs.basic
+      // Only use signing config if keystore is available
+      if (signingConfigs.findByName('basic')) {
+        signingConfig signingConfigs.basic
+      }
     }
     debug {
-      signingConfig signingConfigs.basic
+      // Only use signing config if keystore is available
+      if (signingConfigs.findByName('basic')) {
+        signingConfig signingConfigs.basic
+      }
     }
   }
 

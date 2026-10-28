@@ -49,8 +49,19 @@ public class Service extends android.app.Service {
    */
   @Override
   public void onStart(final Intent intent, final int startId) {
+    // Validate intent is not null
+    if (intent == null) {
+      stopSelf();
+      return;
+    }
+
     /* check if called from self */
     if (intent.getAction() == null) {
+      // Ensure audioPlayer is initialized before use
+      if (audioPlayer == null) {
+        stopSelf();
+        return;
+      }
       var isPLaying = audioPlayer.isPlaying();
       var isLooping = audioPlayer.isLooping();
       switch (intent.getByteExtra(Launcher.TYPE, Launcher.NULL)) {
@@ -64,13 +75,39 @@ public class Service extends android.app.Service {
       }
     } else {
       switch (intent.getAction()) {
-        case Intent.ACTION_VIEW -> setAudio(intent.getData());
-        case Intent.ACTION_SEND -> setAudio(intent.getParcelableExtra(Intent.EXTRA_STREAM));
+        case Intent.ACTION_VIEW -> {
+          Uri uri = intent.getData();
+          if (uri != null) {
+            setAudio(uri);
+          }
+        }
+        case Intent.ACTION_SEND -> {
+          Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+          if (uri != null) {
+            setAudio(uri);
+          }
+        }
       }
     }
   }
 
   void setAudio(final Uri audioLocation) {
+    // Validate URI
+    if (audioLocation == null) {
+      Exceptions.throwError(this, Exceptions.IllegalArgument);
+      stopSelf();
+      return;
+    }
+
+    // Validate URI scheme - only allow safe schemes
+    String scheme = audioLocation.getScheme();
+    if (scheme == null || 
+        !(scheme.equals("content") || scheme.equals("file") || scheme.equals("android.resource"))) {
+      Exceptions.throwError(this, Exceptions.IllegalArgument);
+      stopSelf();
+      return;
+    }
+
     try {
       /* get audio playback logic and start async */
       audioPlayer = new AudioPlayer(this, audioLocation);
@@ -121,7 +158,7 @@ public class Service extends android.app.Service {
     notifications.destroy();
     hwListener.destroy();
     /* interrupt audio playback logic */
-    if (!audioPlayer.isInterrupted()) audioPlayer.interrupt();
+    if (audioPlayer != null && !audioPlayer.isInterrupted()) audioPlayer.interrupt();
 
     super.onDestroy();
   }

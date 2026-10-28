@@ -15,11 +15,14 @@
     a:icon="@drawable/ic_launcher"
     a:label="Tiny Music Player"
     a:restoreAnyVersion="true"
+    a:allowBackup="false"
+    a:supportsRtl="true"
     tools:targetApi="froyo">
 
     <receiver
       a:name=".HWListener"
-      a:exported="true">
+      a:exported="true"
+      a:permission="android.permission.MEDIA_CONTENT_CONTROL">
       <intent-filter>
         <action a:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
@@ -27,7 +30,8 @@
 
     <service
       a:name=".Service"
-      a:exported="false" />
+      a:exported="false"
+      a:foregroundServiceType="mediaPlayback" />
 
     <activity
       a:name=".Launcher"
